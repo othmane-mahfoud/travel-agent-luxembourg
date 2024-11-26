@@ -1,12 +1,12 @@
 import os
 import shutil
 import pandas as pd
+from datetime import datetime
 
 from dotenv import load_dotenv
-
 from langchain.schema import Document
-from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_chroma import Chroma
+from langchain_openai import OpenAIEmbeddings
 
 # Load environment variables
 load_dotenv(override=True)
@@ -14,9 +14,6 @@ load_dotenv(override=True)
 # Load the CSV into a DataFrame
 file_path = "data/ticketmaster_events.csv"
 events_df = pd.read_csv(file_path, encoding="utf-8")
-
-# Check for missing or malformed data
-print(events_df.head())
 
 # Create Documents with metadata for ChromaDB
 documents = []
@@ -35,7 +32,6 @@ for _, row in events_df.iterrows():
     page_content = f"{row['Event Name']} at {row['Venue']} in {row['City']} on {row['Start Date']} at {row['Start Time']}. {row['Genre']} - {row['Subgenre']}."
     documents.append(Document(page_content=page_content, metadata=metadata))
 
-
 # Initialize OpenAI embeddings
 embedding_model = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -48,15 +44,13 @@ if os.path.exists(persist_dir):
 vector_store = Chroma.from_documents(
     documents=documents,
     embedding=embedding_model,
-    persist_directory="db/ticketmaster_events"
+    persist_directory=persist_dir
 )
 
-# Persist the vector store
-vector_store.persist()
-
+# Function to query all events
 def query_events(query: str):
     """
-    Query the vector store to retrieve relevant events.
+    Query the vector store to retrieve events.
 
     Parameters:
     - query (str): User query.
@@ -66,23 +60,59 @@ def query_events(query: str):
     """
     # Load the persisted vector store
     vector_store = Chroma(
+        persist_directory=persist_dir,
+        embedding_function=embedding_model
+    )
+    results = vector_store.similarity_search(query, k=50)
+    return results
+
+
+def query_events_in_timeframe(start_date: str, end_date: str):
+    """
+    Query the vector store to retrieve events within a specific timeframe.
+
+    Parameters:
+    - start_date (str): The start date in YYYY-MM-DD format.
+    - end_date (str): The end date in YYYY-MM-DD format.
+
+    Returns:
+    - list: A list of events within the timeframe.
+    """
+    # Convert input dates to datetime objects
+    start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+
+    # Load the persisted vector store
+    vector_store = Chroma(
         persist_directory="db/ticketmaster_events",
         embedding_function=embedding_model
     )
-    results = vector_store.similarity_search(query, k=3)  # Retrieve top 5 matches
-    return results
 
-# Example query
-query = "What concerts are happening in Luxembourg?"
-results = query_events(query)
+    # Retrieve a smaller subset of events directly related to the query
+    results = vector_store.similarity_search("events in Luxembourg", k=50)  # Limit initial results
 
-# Display results
-for result in results:
-    print(f"Event: {result.metadata['Event Name']}")
-    print(f"Date: {result.metadata['Start Date']} at {result.metadata['Start Time']}")
-    print(f"Venue: {result.metadata['Venue']}, {result.metadata['City']}")
-    print(f"Genre: {result.metadata['Genre']} ({result.metadata['Subgenre']})")
-    print("---")
-    
-# for result in results:
-#     print(result.metadata.keys())  # Display all metadata keys for each result
+    # Filter events by date
+    filtered_events = [
+        result for result in results
+        if start_date_obj <= datetime.strptime(result.metadata["Start Date"], "%Y-%m-%d") <= end_date_obj
+    ]
+
+    return filtered_events
+
+
+# Example usage
+if __name__ == "__main__":
+    # Query for top 3 matches
+    query = "What concerts are happening in Luxembourg?"
+    top_events = query_events(query)
+    print("Top 3 Events:")
+    for event in top_events:
+        print(f"- {event.metadata['Event Name']} on {event.metadata['Start Date']}")
+
+    # Query for events in a timeframe
+    start_date = "2024-11-26"
+    end_date = "2024-12-02"
+    timeframe_events = query_events_in_timeframe(start_date, end_date)
+    print("\nEvents in Timeframe:")
+    for event in timeframe_events:
+        print(f"- {event.metadata['Event Name']} on {event.metadata['Start Date']} at {event.metadata['Start Time']}")
