@@ -1,5 +1,7 @@
-# Python venv
+# by me
 lux_travel_env/
+.DS_Store
+data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
