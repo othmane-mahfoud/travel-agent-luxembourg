@@ -89,5 +89,5 @@ def get_transportation_details(start: str, dest: str):
         return None
     
 
-message=get_transportation_details(start="Esch sur Alzette Guillaume Capus", dest="Porte des sciences")
-print(message)
+# message=get_transportation_details(start="Esch sur Alzette Guillaume Capus", dest="Porte des sciences")
+# print(message)
