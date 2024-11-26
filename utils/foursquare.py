@@ -9,7 +9,7 @@ load_dotenv()
 # Retrieve the Foursquare API key from environment variables
 FOURSQUARE_API_KEY = os.getenv('FOURSQUARE_API_KEY')
 
-def fetch_foursquare_places(category, location, radius=1000, limit=50):
+def fetch_foursquare_places(category, location, radius=10000, limit=50):
     """
     Fetch places from the Foursquare Places API.
 

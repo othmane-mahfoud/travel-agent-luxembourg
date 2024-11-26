@@ -5,9 +5,9 @@ from utils.foursquare import fetch_foursquare_places
 location = '49.6117,6.1319'
 
 # Fetch coffee shops and restaurants
-dining_and_drinking_df = fetch_foursquare_places(category='13000', location=location)
+landmarks_outdoors_df = fetch_foursquare_places(category='16000', location=location)
 
 # Save to a single CSV file
-dining_and_drinking_df.to_csv('data/foursquare_dining.csv', index=False)
+landmarks_outdoors_df.to_csv('data/foursquare_landmarks.csv', index=False)
 
-print("Data for coffee shops and restaurants has been saved to 'data/foursquare_places.csv'.")
+print("Data for coffee shops and restaurants has been saved to 'data/foursquare_landmarks.csv'.")
