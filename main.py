@@ -1,13 +1,11 @@
 import pandas as pd
-from utils.foursquare import fetch_foursquare_places
+from utils.weather import get_current_weather, get_weather_forecast
 
-# Define location (latitude, longitude) for Luxembourg City
-location = '49.6117,6.1319'
+current_weather = get_current_weather(location='Luxembourg')
+print("Current Weather:", current_weather)
 
-# Fetch coffee shops and restaurants
-landmarks_outdoors_df = fetch_foursquare_places(category='16000', location=location)
+forecast = get_weather_forecast(location='Luxembourg')
+for day in forecast:
+    print(day)
 
-# Save to a single CSV file
-landmarks_outdoors_df.to_csv('data/foursquare_landmarks.csv', index=False)
 
-print("Data for coffee shops and restaurants has been saved to 'data/foursquare_landmarks.csv'.")
