@@ -3,6 +3,12 @@ from streamlit_chat import message
 from langchain.schema import HumanMessage, AIMessage
 from agent import agent, history
 
+# Set the page configuration
+st.set_page_config(
+    page_title="LetzGPT",
+    page_icon="🇱🇺",  # Use the Luxembourg flag emoji as the favicon
+)
+
 # Initialize session state variables
 if "history" not in st.session_state:
     st.session_state.history = history  # Initialize as a list of messages
@@ -14,9 +20,13 @@ if "chat_answers_history" not in st.session_state:
     st.session_state["chat_answers_history"] = []
 
 # Streamlit UI
-st.title("Luxembourg Travel Guide 🇱🇺")
+st.title("LetzGPT 🇱🇺")
 st.divider()
-st.subheader("Letz explore!")
+st.subheader("Letz explore Luxembourg!")
+
+# Custom avatars
+human_avatar = "https://cdn-icons-png.flaticon.com/512/847/847969.png"  # Human avatar URL
+ai_avatar = "https://cdn-icons-png.flaticon.com/512/4712/4712027.png"  # AI avatar URL
 
 # Input box for user message
 user_input = st.chat_input("Ask me anything about Luxembourg...")
@@ -44,7 +54,7 @@ if user_input:
                     st.session_state["chat_answers_history"],
                     st.session_state["user_prompt_history"],
                 ):
-                    message(user_query, is_user=True)
-                    message(generated_response)
+                    user_message = st.chat_message("user").write(user_query)
+                    assistant_message = st.chat_message("assistant").write(generated_response)
         except Exception as e:
             st.error(f"An error occurred: {e}")
