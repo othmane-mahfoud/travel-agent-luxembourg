@@ -14,34 +14,37 @@ if "chat_answers_history" not in st.session_state:
     st.session_state["chat_answers_history"] = []
 
 # Streamlit UI
-st.title("Luxembourg Travel Agent 🇱🇺")
+st.title("Luxembourg Travel Guide 🇱🇺")
+st.divider()
+st.subheader("Letz explore!")
 
 # Input box for user message
-user_input = st.text_input("You:", placeholder="Ask me anything about Luxembourg...", key="user_input")
+user_input = st.chat_input("Ask me anything about Luxembourg...")
 
 # Handle user input
 if user_input:
-    print(st.session_state.history)
-    # Add user message to history
-    human_message = user_input
-    st.session_state["user_prompt_history"].append(human_message)
-    st.session_state.history.add_user_message(human_message)
-
-    # Prepare the chat history for the agent
-    try:
-        agent_response = st.session_state.agent.invoke(st.session_state.history)
-        # Add AI response to history
-        ai_message = agent_response["messages"][-1].content
-        st.session_state["chat_answers_history"].append(ai_message)
-        st.session_state.history.add_ai_message(ai_message)
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
+    with st.spinner("The AI is thinking..."):
         
-if st.session_state["chat_answers_history"]:
-    st.subheader("Chat History")
-    for generated_response, user_query in zip(
-        st.session_state["chat_answers_history"],
-        st.session_state["user_prompt_history"],
-    ):
-        message(user_query, is_user=True)
-        message(generated_response)
+        print(st.session_state.history)
+        
+        # Add user message to history
+        human_message = user_input
+        st.session_state["user_prompt_history"].append(human_message)
+        st.session_state.history.add_user_message(human_message)
+
+        # Prepare the chat history for the agent
+        try:
+            agent_response = st.session_state.agent.invoke(st.session_state.history)
+            # Add AI response to history
+            ai_message = agent_response["messages"][-1].content
+            st.session_state["chat_answers_history"].append(ai_message)
+            st.session_state.history.add_ai_message(ai_message)
+            if st.session_state["chat_answers_history"]:
+                for generated_response, user_query in zip(
+                    st.session_state["chat_answers_history"],
+                    st.session_state["user_prompt_history"],
+                ):
+                    message(user_query, is_user=True)
+                    message(generated_response)
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
