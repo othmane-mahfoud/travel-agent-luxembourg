@@ -89,5 +89,76 @@ def get_transportation_details(start: str, dest: str):
         return None
     
 
-# message=get_transportation_details(start="Esch sur Alzette Guillaume Capus", dest="Porte des sciences")
-# print(message)
+def find_nearby_stops(longitude = 5.947335, latitude = 49.50391):
+    """
+    Return stops and the buses/trains that stop at them using the Mobiliteit API.
+
+    Returns:
+    - list: A list of dictionaries with details about stops and the buses/trains stopping there.
+    """
+    max_no = 20
+    radius = 500
+    url = "https://cdt.hafas.de/opendata/apiserver/location.nearbystops"
+    params = {
+        "accessId": MOBILITEIT_API_KEY,
+        "originCoordLong": longitude,
+        "originCoordLat": latitude,
+        "maxNo": max_no,
+        "r": radius,
+        "format": "json"
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        # Parse the response
+        nearby_stops = []
+        for item in data.get("stopLocationOrCoordLocation", []):
+            stop = item.get("StopLocation")
+            if stop:
+                stop_info = {
+                    "name": stop.get("name"),
+                    "id": stop.get("id"),
+                    "extId": stop.get("extId"),
+                    "latitude": stop.get("lat"),
+                    "longitude": stop.get("lon"),
+                    "distance": stop.get("dist"),
+                    "products": stop.get("products"),
+                    "buses_or_trains": []
+                }
+
+                # Extract buses/trains stopping at the stop
+                products = stop.get("productAtStop", [])
+                for product in products:
+                    stop_info["buses_or_trains"].append({
+                        "name": product.get("name"),
+                        "line": product.get("line"),
+                        "category": product.get("catOut"),
+                        "icon_background_color": product.get("icon", {}).get("backgroundColor", {}).get("hex"),
+                        "icon_foreground_color": product.get("icon", {}).get("foregroundColor", {}).get("hex")
+                    })
+
+                nearby_stops.append(stop_info)
+
+        return nearby_stops
+
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred while querying the Mobiliteit API: {e}")
+        return []
+    except KeyError as e:
+        print(f"Key error while parsing the response: {e}")
+        return []
+    
+    
+if __name__ == "__main__":
+    # Example coordinates for Esch-sur-Alzette
+    # longitude = 5.9717754
+    # latitude = 49.508418
+    nearby_stops = find_nearby_stops()
+
+    for stop in nearby_stops:
+        print(f"Stop: {stop['name']} (Distance: {stop['distance']} meters)")
+        for bus_or_train in stop["buses_or_trains"]:
+            print(f"  - {bus_or_train['name']} (Line: {bus_or_train['line']}, Category: {bus_or_train['category']})")
