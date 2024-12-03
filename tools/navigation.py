@@ -1,5 +1,5 @@
 from langchain.tools import tool
-from utils.mobiliteit import get_transportation_details
+from utils.mobiliteit import get_transportation_details, find_nearby_stops
 
 @tool
 def transportation_directions(query: str):
@@ -40,3 +40,33 @@ def transportation_directions(query: str):
             return f"According to Mobiliteit, there are no possible trips from {start} to {dest}. Please try again with different stops."
     except Exception as e:
         return f"An error occurred while processing your request: {str(e)}"
+
+
+@tool
+def get_nearby_stops_tool(query: str) -> str:
+    """
+    This tool automatically fetches stops without requiring user-provided locations.
+    
+    Parameters:
+    - query (str): User query containing question about stops.
+    
+     Returns:
+    - str: bus stops and information about them
+    """
+    try:
+        nearby_stops = find_nearby_stops(longitude = 5.947335, latitude = 49.50391)
+        
+        # Format the results
+        if not nearby_stops:
+            return "No nearby stops found for the given location."
+        
+        result = "Here are the nearby stops and the transportation options available:\n"
+        for stop in nearby_stops:
+            result += f"\n- **Stop Name**: {stop['name']} (Distance: {stop['distance']} meters)"
+            for transport in stop["buses_or_trains"]:
+                result += f"\n  - **{transport['name']}** (Line: {transport['line']}, Category: {transport['category']})"
+        return result
+    
+    except Exception as e:
+        return f"An error occurred while fetching nearby stops: {str(e)}"
+
