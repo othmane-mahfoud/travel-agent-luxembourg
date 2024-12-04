@@ -16,7 +16,7 @@ def get_places(city, place_type="restaurant"):
         lng = geocode_result[0]['geometry']['location']['lng']
         
         ## restaurants nearby
-        places_results = gmaps.places_nearby((lat, lng), radius=1000, type=place_type)
+        places_results = gmaps.places_nearby((lat, lng), radius=5000, type=place_type)
         # Guardar los resultados en un archivo JSON
         with open("places_results.json", "w") as json_file:
             json.dump(places_results, json_file, indent=4)  # Save the places_results as a JSON file
@@ -24,6 +24,11 @@ def get_places(city, place_type="restaurant"):
         
         ## Get the names
         places = []
+        service_fields = [
+            'serves_beer', 'serves_breakfast', 'serves_brunch', 
+            'serves_dinner', 'serves_lunch', 'serves_vegetarian_food', 
+            'serves_wine', 'takeout'
+        ]
         
         for place in places_results.get('results',[]):
             name = place.get('name', 'N/A')
@@ -40,14 +45,21 @@ def get_places(city, place_type="restaurant"):
             website = None
             opening_hours = None
             phone_number = None
+            wheelchair = None
+            services = {field: "N/A" for field in service_fields}
+            
             if place_id:
                 place_details = gmaps.place(place_id=place_id)
                 website = place_details.get('result', {}).get('website', None)
                 # Extract opening hours if available
                 opening_hours = place_details.get('result', {}).get('opening_hours', {}).get('weekday_text', None)
-                phone_number = place_details.get('result', {}).get('formatted_phone_number', "N/A")
-
-            
+                phone_number = place_details.get('result', {}).get('international_phone_number', "N/A")
+                ## Features of the place
+                wheelchair = place_details.get('result', {}).get('wheelchair_accessible_entrance', 'N/A')
+                result_details = place_details.get('result', {})
+                for field in service_fields:
+                    services[field] = result_details.get(field, "N/A")
+                
             places.append({
                 'name': name,
                 'rating': rating,
@@ -57,7 +69,9 @@ def get_places(city, place_type="restaurant"):
                 'location': description,
                 'website': website,
                 'opening_hours': opening_hours,
-                'phone_number': phone_number
+                'phone_number': phone_number,
+                'wheelchair' : wheelchair,
+                **services
             })
             
         ## Save the places into csv
@@ -65,12 +79,8 @@ def get_places(city, place_type="restaurant"):
             writer = csv.DictWriter(csv_file, fieldnames=places[0].keys())
             writer.writeheader()
             writer.writerows(places)
-        
+    
         
         return places
     else:
         print("place not found")
-    
-
-
-
