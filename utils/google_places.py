@@ -32,25 +32,32 @@ def get_places(city, place_type="restaurant"):
             #location = place['geometry']['location']
             description = place.get('vicinity', 'No description available')
             place_id = place.get('place_id', None)
+            types = place.get('types',None)
+            n_ratings = place.get("user_ratings_total", 'N/A')
+            types = types[0]
             
             ## get website and opeining hours 
             website = None
             opening_hours = None
+            phone_number = None
             if place_id:
                 place_details = gmaps.place(place_id=place_id)
                 website = place_details.get('result', {}).get('website', None)
                 # Extract opening hours if available
                 opening_hours = place_details.get('result', {}).get('opening_hours', {}).get('weekday_text', None)
+                phone_number = place_details.get('result', {}).get('formatted_phone_number', "N/A")
 
             
             places.append({
                 'name': name,
                 'rating': rating,
+                'n_ratings' : n_ratings,
                 'price_level': price_level,
-               # 'location': location,
+                'type': types,
                 'location': description,
                 'website': website,
-                'opening_hours': opening_hours
+                'opening_hours': opening_hours,
+                'phone_number': phone_number
             })
             
         ## Save the places into csv
