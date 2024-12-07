@@ -3,9 +3,12 @@ import os
 import json
 import csv
 
-## Get places function, returns a list of places
+from dotenv import load_dotenv
 
-gmaps = googlemaps.Client(key=os.getenv("MAPS_API"))
+## Get places function, returns a list of places
+load_dotenv(override=True)
+
+gmaps = googlemaps.Client(key=os.getenv("GOOGLE_API_KEY"))
 
 def get_places(city, place_type="restaurant"):
     ## Get coordinates of city
@@ -16,11 +19,7 @@ def get_places(city, place_type="restaurant"):
         lng = geocode_result[0]['geometry']['location']['lng']
         
         ## restaurants nearby
-        places_results = gmaps.places_nearby((lat, lng), radius=5000, type=place_type)
-        # Guardar los resultados en un archivo JSON
-        with open("places_results.json", "w") as json_file:
-            json.dump(places_results, json_file, indent=4)  # Save the places_results as a JSON file
-        
+        places_results = gmaps.places_nearby((lat, lng), radius=10000, type=place_type)        
         
         ## Get the names
         places = []
@@ -61,26 +60,30 @@ def get_places(city, place_type="restaurant"):
                     services[field] = result_details.get(field, "N/A")
                 
             places.append({
-                'name': name,
-                'rating': rating,
-                'n_ratings' : n_ratings,
-                'price_level': price_level,
-                'type': types,
-                'location': description,
-                'website': website,
-                'opening_hours': opening_hours,
-                'phone_number': phone_number,
-                'wheelchair' : wheelchair,
-                **services
+                'FSQ_ID': None,
+                'Name': name,
+                'Category': types,
+                'Icon': None,
+                "Latitude": None,
+                "Longitude": None,
+                "Region": None,
+                "Formatted Address": description,
+                "Description": f"Opening Hours {opening_hours} - Accessibility {wheelchair}",
+                "Phone Number": phone_number,
+                'Rating': rating,
+                'Price': price_level,
+                "Tips": None
             })
             
         ## Save the places into csv
-        with open("places.csv", "w", newline='', encoding="utf-8") as csv_file:
+        with open("data/google_places.csv", "w", newline='', encoding="utf-8") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=places[0].keys())
             writer.writeheader()
             writer.writerows(places)
     
-        
         return places
     else:
         print("place not found")
+        
+if __name__ == "__main__":
+    get_places(city="Luxembourg")
