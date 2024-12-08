@@ -12,7 +12,8 @@ from langchain_openai import OpenAIEmbeddings
 load_dotenv(override=True)
 
 # Load the CSV into a DataFrame
-file_path = "data/ticketmaster_events.csv"
+# file_path = "data/ticketmaster_events.csv"
+file_path = "data/combined_events.csv"
 events_df = pd.read_csv(file_path, encoding="utf-8")
 
 # Create Documents with metadata for ChromaDB
@@ -27,16 +28,17 @@ for _, row in events_df.iterrows():
         "Subgenre": row["Subgenre"],
         "Venue": row["Venue"],
         "City": row["City"],
-        "Address": row["Address"]
+        "Address": row["Address"],
+        "Description": row["Description"]
     }
-    page_content = f"{row['Event Name']} at {row['Venue']} in {row['City']} on {row['Start Date']} at {row['Start Time']}. {row['Genre']} - {row['Subgenre']}."
+    page_content = f"{row['Event Name']} is a {row['Genre']} - {row['Subgenre']} event at {row['Venue']} in {row['City']} on {row['Start Date']} at {row['Start Time']}."
     documents.append(Document(page_content=page_content, metadata=metadata))
 
 # Initialize OpenAI embeddings
 embedding_model = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=os.getenv("OPENAI_API_KEY"))
 
 # Delete the existing vector store directory if it exists
-persist_dir = "db/ticketmaster_events"
+persist_dir = "db/combined_events"
 if os.path.exists(persist_dir):
     shutil.rmtree(persist_dir)
 
@@ -63,7 +65,7 @@ def query_events(query: str):
         persist_directory=persist_dir,
         embedding_function=embedding_model
     )
-    results = vector_store.similarity_search(query, k=50)
+    results = vector_store.similarity_search(query, k=10)
     return results
 
 
@@ -84,12 +86,12 @@ def query_events_in_timeframe(start_date: str, end_date: str):
 
     # Load the persisted vector store
     vector_store = Chroma(
-        persist_directory="db/ticketmaster_events",
+        persist_directory="db/combined_events",
         embedding_function=embedding_model
     )
 
     # Retrieve a smaller subset of events directly related to the query
-    results = vector_store.similarity_search("events in Luxembourg", k=50)  # Limit initial results
+    results = vector_store.similarity_search("events in Luxembourg", k=10)  # Limit initial results
 
     # Filter events by date
     filtered_events = [

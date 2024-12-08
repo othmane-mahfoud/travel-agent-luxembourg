@@ -97,7 +97,9 @@ def event_tool(query: str):
         for event in events:
             response += (
                 f"- {event.metadata['Event Name']} on {event.metadata['Start Date']} at {event.metadata['Start Time']} "
-                    f"({event.metadata.get('Genre')}/{event.metadata.get('Subgenre')}), at {event.metadata['Venue']}, {event.metadata['Address']}\n"
+                    f"({event.metadata.get('Genre')}/{event.metadata.get('Subgenre')}), at {event.metadata['Venue']}, {event.metadata['Address']} "
+                        f"with the description: {event.metadata.get('Description')} "
+                            f"Image URL: {event.metadata.get('Image URL')} \n"
             )
         return response
     else:

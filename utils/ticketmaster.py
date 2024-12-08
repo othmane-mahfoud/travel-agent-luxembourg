@@ -80,7 +80,8 @@ def fetch_ticketmaster_events(country_code='LU', city=None, classification_name=
                 'Subgenre': subgenre,
                 'Venue': venue_name,
                 'City': city_name,
-                'Address': address
+                'Address': address,
+                'Description': f"{event_name} is a {genre}/{subgenre} event taking place in {city_name} at {venue_name} on the {start_date} at {start_time}"
             })
 
         # Convert the list of events to a pandas DataFrame
@@ -90,3 +91,8 @@ def fetch_ticketmaster_events(country_code='LU', city=None, classification_name=
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
         return pd.DataFrame()  # Return an empty DataFrame in case of error
+    
+if __name__ == "__main__":
+    ticketmaster_events = fetch_ticketmaster_events()
+    ticketmaster_events_df = pd.DataFrame(ticketmaster_events)
+    ticketmaster_events_df.to_csv("data/ticketmaster_events.csv", index=False)
