@@ -32,38 +32,50 @@ def fetch_event_details(event_url):
 def scrape_page(url, events_list):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-    
-    event_wrappers = soup.find_all("div", class_="listItem__text")
+
+    # Locate the parent container for each event
+    event_wrappers = soup.find_all("li", class_="listItem")  # Adjust based on the actual parent tag
+
     for event in event_wrappers:
-        title_element = event.find("h5", class_="listItem__title__header")
+        # Get the event text details from the "listItem__text" div
+        text_element = event.find("div", class_="listItem__text")
+        if not text_element:
+            continue  # Skip if no text details are found
+        
+        title_element = text_element.find("h5", class_="listItem__title__header")
         title = title_element.text.strip() if title_element else "None"
 
-        start_date_element = event.find("small", string=lambda text: text and "When?" in text)
+        start_date_element = text_element.find("small", string=lambda text: text and "When?" in text)
         start_date = start_date_element.text.replace("When?", "").strip() if start_date_element else "None"
 
-        last_event_date_element = event.find("small", string=lambda text: text and "Last event date on" in text)
-        end_date = last_event_date_element.text.replace("Last event date on", "").strip() if last_event_date_element else "None"
-
-        location_element = event.find("small", string=lambda text: text and "Where?" in text)
+        location_element = text_element.find("small", string=lambda text: text and "Where?" in text)
         location = location_element.text.replace("Where?", "").strip() if location_element else "None"
 
-        url_element = event.find("a", class_="listItem__main__fakelink")
+        url_element = text_element.find("a", class_="listItem__main__fakelink")
         event_url = url_element["href"] if url_element else "None"
 
+        # Get the image URL from the sibling "listItem__fig" div
+        fig_element = event.find("div", class_="listItem__fig")
+        image_element = fig_element.find("img", class_="listItem__fig__image-small") if fig_element else None
+        image_url = image_element["src"] if image_element else "None"
+
+        # Fetch additional details
         category, description = fetch_event_details(event_url)
 
+        # Append the event data to the list
         events_list.append({
             "Event Name": title,
-            "Image URL": None,
-            "Start Date": f"{start_date.split(".")[2]}-{start_date.split(".")[1]}-{start_date.split(".")[0]}",
+            "Image URL": image_url,
+            "Start Date": f"{start_date.split('.')[2]}-{start_date.split('.')[1]}-{start_date.split('.')[0]}" if start_date != "None" else "None",
             "Start Time": "18:30:00",
             "Genre": category,
             "Subgenre": category,
             "Venue": location,
-            "City": location.split(" ")[-1] if location.split(" ")[-1][-1] not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] else "Luxembourg",
+            "City": location.split(" ")[-1] if location and location.split(" ")[-1][-1] not in '0123456789' else "Luxembourg",
             "Address": location,
             "Description": description
         })
+
 
 def scrape_all_pages(base_url, total_pages):
     events = []
