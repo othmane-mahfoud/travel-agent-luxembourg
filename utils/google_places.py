@@ -2,20 +2,20 @@ import os
 import requests
 import pandas as pd
 from dotenv import load_dotenv
+import time
 
 load_dotenv(override=True)
 
 API_KEY = os.getenv("GOOGLE_API_KEY")
 location = '49.6112809,6.1236146'
 radius = 20000
-place_type = 'restaurant'
-keyword = 'restaurant'
+keywords = ['restaurant', 'fast-food', 'coffee shop', 'pub', 'bar']  # List of keywords to iterate over
 
 # Step 1: Perform Nearby Search
-def get_nearby_places():
+def get_nearby_places(keyword):
     nearby_search_url = (
         f'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
-        f'?location={location}&radius={radius}&type={place_type}&keyword={keyword}&key={API_KEY}'
+        f'?location={location}&radius={radius}&keyword={keyword}&key={API_KEY}'
     )
     all_results = []
     while nearby_search_url:
@@ -27,7 +27,6 @@ def get_nearby_places():
         # Check if there is a next page
         next_page_token = data.get('next_page_token')
         if next_page_token:
-            import time
             time.sleep(2)  # Required delay before using the next_page_token
             nearby_search_url = (
                 f'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
@@ -66,43 +65,47 @@ def extract_reviews(reviews):
 
 # Main Function
 def fetch_places_data():
-    places = get_nearby_places()
     all_places_data = []
 
-    for place in places:
-        place_id = place['place_id']
-        details = get_place_details(place_id)
+    for keyword in keywords:  # Iterate over the keywords
+        print(f"Fetching data for keyword: {keyword}")
+        places = get_nearby_places(keyword)
         
-        # Extract details
-        name = details.get('name', 'None')
-        address = details.get('formatted_address', 'None')
-        geometry = details.get('geometry', {}).get('location', {})
-        latitude = geometry.get('lat', 'None')
-        longitude = geometry.get('lng', 'None')
-        types = details.get('types', [])
-        phone_number = details.get('formatted_phone_number', 'None')
-        rating = details.get('rating', 'None')
-        price_level = details.get('price_level', 'None')
-        reviews = extract_reviews(details.get('reviews', []))
-        image_url = extract_image_url(details.get('photos', []))
+        for place in places:
+            place_id = place['place_id']
+            details = get_place_details(place_id)
+            
+            # Extract details
+            name = details.get('name', 'None')
+            address = details.get('formatted_address', 'None')
+            geometry = details.get('geometry', {}).get('location', {})
+            latitude = geometry.get('lat', 'None')
+            longitude = geometry.get('lng', 'None')
+            types = details.get('types', [])
+            phone_number = details.get('formatted_phone_number', 'None')
+            rating = details.get('rating', 'None')
+            price_level = details.get('price_level', 'None')
+            reviews = extract_reviews(details.get('reviews', []))
+            image_url = extract_image_url(details.get('photos', []))
 
-        # Append data
-        all_places_data.append({
-            'Name': name,
-            'Category': ', '.join(types),
-            'Image URL': image_url,
-            'Latitude': latitude,
-            'Longitude': longitude,
-            'Formatted Address': address,
-            'Description': None,
-            'Phone Number': phone_number,
-            'Rating': rating,
-            'Price Level': 2 if 'None' else price_level,
-            'Reviews': reviews
-        })
-        
-        all_places_df = pd.DataFrame(all_places_data)
+            # Append data
+            all_places_data.append({
+                'Name': name,
+                'Category': ', '.join(types),
+                'Keyword': keyword,
+                'Image URL': image_url,
+                'Latitude': latitude,
+                'Longitude': longitude,
+                'Formatted Address': address,
+                'Description': None,
+                'Phone Number': phone_number,
+                'Rating': rating,
+                'Price Level': 2 if 'None' else price_level,
+                'Reviews': reviews
+            })
 
+    # Combine all results into a DataFrame
+    all_places_df = pd.DataFrame(all_places_data).drop_duplicates(subset=["Name", "Formatted Address"])
     return all_places_df
 
 # Run the script and print results
@@ -110,4 +113,4 @@ if __name__ == '__main__':
     places_df = fetch_places_data()
     places_df.to_csv("data/google_places.csv", index=False)
     print(places_df.shape)
-    print("Google Places Successfully Saved")
+    print("Google Places Data Successfully Saved")

@@ -18,7 +18,7 @@ def dining_places_tool(query: str):
         for place in places:
             response += (
                 f"- {place.metadata.get('Name')} ({place.metadata.get('Category')}), located at {place.metadata.get('Formatted Address')}. "
-                f"with the Image URL {place.metadata.get('Image URL')}"
+                f"with the Image URL {place.metadata.get('Image URL', "No Image URL is available")}"
                 f"with a Rating of {place.metadata.get('Rating')} "
                 f"with a price level/range of {place.metadata.get('Price Level')} "
                 f"with the following reviews: '{place.metadata.get('Reviews')}'\n"
