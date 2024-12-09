@@ -25,9 +25,9 @@ tools = [
     Tool(name="current_weather", func=current_weather, description="Get the current weather in Luxembourg."),
     Tool(name="weather_forecast", func=weather_forecast, description="Get the 5-day weather forecast in Luxembourg."),
     Tool(name="transportation_directions", func=transportation_directions, description="Provide directions using the Mobiliteit API."),
-    Tool(name="find_stops", func=get_nearby_stops_tool, description="Automatically retrieves nearby stops and available transportation without requiring location input."),
+    Tool(name="find_stops", func=get_nearby_stops_tool, description="Automatically retrieves nearby/near me stops and available transportation without requiring location input."),
     Tool(name="event_tool", func=event_tool, description="Provide information about events in Luxembourg."),
-    Tool(name="landmark_tool", func=landmark_tool, description="Retrieve information about landmarks and monuments in Luxembourg."),
+    Tool(name="landmark_tool", func=landmark_tool, description="Tool for retrieving detailed information about tourist attractions, landmarks, monuments, parks and views in Luxembourg."),
     Tool(name="dining_places_tool", func=dining_places_tool, description="Retrieve information about restaurants, coffee shops, bars, pubs, and other dining institutions in Luxembourg.")
 ]
 

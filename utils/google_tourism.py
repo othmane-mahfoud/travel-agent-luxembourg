@@ -6,16 +6,16 @@ import time
 
 load_dotenv(override=True)
 
+# Load API Key and configuration
 API_KEY = os.getenv("GOOGLE_API_KEY")
-location = '49.6112809,6.1236146'
-radius = 20000
-keywords = ['restaurant', 'fast-food', 'coffee shop', 'pub', 'bar']  # List of keywords to iterate over
+location = '49.6112809,6.1236146'  # Luxembourg coordinates
+radius = 20000  # 20 km radius
 
-# Step 1: Perform Nearby Search
-def get_nearby_places(keyword):
+# Function to fetch places for a specific type
+def get_places(place_type):
     nearby_search_url = (
         f'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
-        f'?location={location}&radius={radius}&keyword={keyword}&key={API_KEY}'
+        f'?location={location}&radius={radius}&type={place_type}&key={API_KEY}'
     )
     all_results = []
     while nearby_search_url:
@@ -23,31 +23,30 @@ def get_nearby_places(keyword):
         data = response.json()
         results = data.get('results', [])
         all_results.extend(results)
-        
-        # Check if there is a next page
+
+        # Handle pagination with next_page_token
         next_page_token = data.get('next_page_token')
         if next_page_token:
-            time.sleep(2)  # Required delay before using the next_page_token
+            time.sleep(2)  # Delay required by Google API
             nearby_search_url = (
                 f'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
                 f'?pagetoken={next_page_token}&key={API_KEY}'
             )
         else:
             nearby_search_url = None  # No more pages
-            
     return all_results
 
-# Step 2: Get Place Details
+# Function to fetch detailed reviews using Place Details API
 def get_place_details(place_id):
-    fields = 'name,formatted_address,geometry,photos,types,formatted_phone_number,rating,price_level,reviews'
-    place_details_url = (
+    fields = 'reviews'
+    details_url = (
         f'https://maps.googleapis.com/maps/api/place/details/json'
         f'?place_id={place_id}&fields={fields}&key={API_KEY}'
     )
-    response = requests.get(place_details_url)
+    response = requests.get(details_url)
     return response.json().get('result', {})
 
-# Step 3: Extract Desired Information
+# Function to extract image URL from the response
 def extract_image_url(photos):
     if photos:
         photo_reference = photos[0]['photo_reference']
@@ -57,60 +56,62 @@ def extract_image_url(photos):
         )
     return 'None'
 
+# Function to extract reviews (text from first 3 reviews)
 def extract_reviews(reviews):
     if not reviews:
         return 'None'
     review_texts = [review.get('text', 'No review text') for review in reviews[:3]]
     return ' | '.join(review_texts)
 
-# Main Function
+# Main function to fetch data for all types
 def fetch_places_data():
     all_places_data = []
+    types = [
+        'tourist_attraction', 'observation_deck', 'monument', 'historical_place', 'museum',
+        'botanical_garden', 'garden', 'historical_landmark',
+        'national_park', 'park', 'plaza'
+    ]
 
-    for keyword in keywords:  # Iterate over the keywords
-        print(f"Fetching data for keyword: {keyword}")
-        places = get_nearby_places(keyword)
+    for place_type in types:
+        print(f"Fetching data for type: {place_type}")
+        places = get_places(place_type)
+        print(f"Fetched {len(places)} {place_type}s")
         
         for place in places:
-            place_id = place['place_id']
-            details = get_place_details(place_id)
-            
-            # Extract details
-            name = details.get('name', 'None')
-            address = details.get('formatted_address', 'None')
-            geometry = details.get('geometry', {}).get('location', {})
-            latitude = geometry.get('lat', 'None')
-            longitude = geometry.get('lng', 'None')
-            types = details.get('types', [])
-            phone_number = details.get('formatted_phone_number', 'None')
-            rating = details.get('rating', 'None')
-            price_level = details.get('price_level', 'None')
-            reviews = extract_reviews(details.get('reviews', []))
-            image_url = extract_image_url(details.get('photos', []))
+            place_id = place.get('place_id', 'None')
+            name = place.get('name', 'None')
+            address = place.get('vicinity', 'None')
+            geometry = place['geometry']['location']
+            latitude = geometry['lat']
+            longitude = geometry['lng']
+            rating = place.get('rating', 'None')
+            types = place.get('types', [])
+            image_url = extract_image_url(place.get('photos', []))
 
-            # Append data
+            # Fetch reviews using Place Details API
+            details = get_place_details(place_id)
+            reviews = extract_reviews(details.get('reviews', []))
+
             all_places_data.append({
                 'Name': name,
                 'Category': ', '.join(types),
-                'Keyword': keyword,
+                'Type': place_type,
                 'Image URL': image_url,
                 'Latitude': latitude,
                 'Longitude': longitude,
-                'Formatted Address': address,
-                'Description': None,
-                'Phone Number': phone_number,
+                'Address': address,
                 'Rating': rating,
-                'Price Level': 2 if 'None' else price_level,
                 'Reviews': reviews
             })
 
-    # Combine all results into a DataFrame
-    all_places_df = pd.DataFrame(all_places_data).drop_duplicates(subset=["Name", "Formatted Address"])
+    # Combine results into a single DataFrame and remove duplicates
+    all_places_df = pd.DataFrame(all_places_data).drop_duplicates(subset=["Name", "Address"])
     return all_places_df
 
-# Run the script and print results
+# Save the data to a CSV file
 if __name__ == '__main__':
     places_df = fetch_places_data()
-    places_df.to_csv("data/google_places.csv", index=False)
+    places_df.to_csv("data/google_tourism.csv", index=False)
+    print(places_df.head())
     print(places_df.shape)
-    print("Google Places Data Successfully Saved")
+    print("Google Places Data with Reviews Successfully Saved")

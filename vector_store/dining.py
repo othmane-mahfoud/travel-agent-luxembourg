@@ -10,35 +10,33 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 # Load the CSV into a DataFrame
-file_path = "data/foursquare_dining.csv"
+file_path = "data/google_places.csv"
 dining_df = pd.read_csv(file_path, encoding="utf-8")
 
 # Create Documents with metadata for ChromaDB
 documents = []
 for _, row in dining_df.iterrows():
     metadata = {
-        "FSQ_ID": row["FSQ_ID"],
         "Name": row["Name"],
         "Category": row["Category"],
-        "Icon": row["Icon"],
+        "Image URL": row["Image URL"],
         "Latitude": row["Latitude"],
         "Longitude": row["Longitude"],
-        "Region": row["Region"],
         "Formatted Address": row["Formatted Address"],
         "Description": row["Description"],
         "Phone Number": row["Phone Number"],
         "Rating": row["Rating"],
-        "Price": row["Price"],
-        "Tips": row["Tips"]
+        "Price Level": row["Price Level"],
+        "Reviews": row["Reviews"]
     }
-    page_content = f"{row['Name']} - {row['Category']} located at {row['Formatted Address']} with a rating of {row['Rating']}. {row['Description']}."
+    page_content = f"{row['Name']} - {row['Category']} located at {row['Formatted Address']} with a rating of {row['Rating']} and a price level of {row['Price Level']}"
     documents.append(Document(page_content=page_content, metadata=metadata))
 
 # Initialize OpenAI embeddings
 embedding_model = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=os.getenv("OPENAI_API_KEY"))
 
 # Delete the existing vector store directory if it exists
-persist_dir = "db/foursquare_dining"
+persist_dir = "db/google_places"
 if os.path.exists(persist_dir):
     shutil.rmtree(persist_dir)
 
@@ -62,9 +60,9 @@ def query_dining_places(query: str):
     - list: A list of matching dining places with metadata.
     """
     vector_store = Chroma(
-        persist_directory="db/foursquare_dining",
+        persist_directory="db/google_places",
         embedding_function=embedding_model
     )
-    results = vector_store.similarity_search(query, k=5) 
+    results = vector_store.similarity_search(query, k=10) 
     return results
 

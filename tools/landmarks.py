@@ -4,23 +4,23 @@ from vector_store.landmarks import query_landmarks
 @tool
 def landmark_tool(query: str):
     """
-    Tool for retrieving detailed landmark information in Luxembourg.
+    Tool for retrieving detailed information about tourist attractions, landmarks, monuments, parks and views in Luxembourg.
 
     Parameters:
     - query (str): User query.
 
     Returns:
-    - str: Detailed information about landmarks.
+    - str: detailed information about tourist attractions, landmarks, monuments, parks and views in Luxembourg
     """
     landmarks = query_landmarks(query)
     if landmarks:
-        response = "Here are some landmarks in Luxembourg:\n"
+        response = "Here are some tourist attractions in Luxembourg:\n"
         for landmark in landmarks:
             response += (
-                f"- {landmark.metadata.get('Name')} ({landmark.metadata.get('Category')}), located at {landmark.metadata.get('Formatted Address')}.\n"
-                f"  Description: {landmark.metadata.get('Description')}\n"
+                f"- {landmark.metadata.get('Name')} ({landmark.metadata.get('Category')}), located at {landmark.metadata.get('Address')}.\n"
+                f"  Image URL: {landmark.metadata.get('Image URL', 'No Image Available')}\n"
                 f"  Rating: {landmark.metadata.get('Rating')}\n"
-                f"  Tips: {landmark.metadata.get('Tips')}\n"
+                f"  Reviews: {landmark.metadata.get('Reviews')}\n"
             )
         return response
     else:
