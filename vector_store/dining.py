@@ -63,6 +63,6 @@ def query_dining_places(query: str):
         persist_directory="db/google_places",
         embedding_function=embedding_model
     )
-    results = vector_store.similarity_search(query, k=5) 
+    results = vector_store.similarity_search(query, k=10) 
     return results
 
